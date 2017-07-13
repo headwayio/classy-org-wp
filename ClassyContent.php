@@ -23,16 +23,16 @@ class ClassyContent
      */
     public function campaignOverview($campaignId)
     {
-        $cacheKey = ClassyOrg::CACHE_KEY_PREFIX . '_CAMPAIGN_OVERVIEW_' . $campaignId;
+        $cacheKey = ClassyOrg::CACHE_KEY_PREFIX . '_CAMPAIGN_OVERVIEWS' . $campaignId;
         $result = get_transient($cacheKey);
 
         if ($result === false)
         {
             $campaign = $this->apiClient->request('/campaigns/' . $campaignId);
             $overview = $this->apiClient->request('/campaigns/' . $campaignId . '/overview');
-
             $result = json_decode($campaign, true);
-            $result['overview'] = json_decode($overview, true);
+            //write_log( $result );
+           $result['overview'] = json_decode($overview, true);
 
             set_transient($cacheKey, $result, $this->getExpiration());
         }
@@ -58,7 +58,6 @@ class ClassyContent
                 'aggregates' => 'true',
                 'sort'       => 'total_raised:desc',
                 'per_page'   => $count,
-                'with'       => 'supporter',
                 'filter'     => 'status=active'
             );
             $fundraisers = $this->apiClient->request(
@@ -125,17 +124,18 @@ class ClassyContent
     public function createEventPages($count)
     {
         $orgId = get_option( 'organization_id' );
-        $cacheKey = ClassyOrg::CACHE_KEY_PREFIX . '_EVENT_PAGE_LIST_' . $orgId;
+        $cacheKey = ClassyOrg::CACHE_KEY_PREFIX . '_EVENT_PAGES_' . $orgId;
         $result = get_transient($cacheKey);
 
         if ($result === false)
         {
             $date = gmdate("Y-m-d\TH:i:s\Z");
+            //write_log('Todays date is: '.$date);
             $params = array(
                 'aggregates' => 'true',
                 'per_page'   => $count,
                 'sort'       => 'ended_at:asc',
-                'filter'     => 'status=active,type=ticketed,ended_at>'.$date
+                'filter'     => 'status=active,started_at>'.$date
             );
             $campaigns = $this->apiClient->request(
                 '/organizations/' . $orgId . '/campaigns',
@@ -190,7 +190,7 @@ class ClassyContent
      * ADDED - Fetch campaign transactions from API
      *
      * @param integer $campaignId ID of organization to pull
-     * @param integer $count Number of records to return
+     * @param text $email to retrieve
      * @return array|bool|mixed
      */
     public function campaignTransactions($campaignID, $email)
@@ -212,6 +212,29 @@ class ClassyContent
     }
 
     /**
+     * ADDED - Create campaign fundraising page
+     *
+     * @param integer $campaignId ID of organization to pull
+     * @param integer $memberID Number of records to return
+     * @return array|bool|mixed
+     */
+    public function createFundraiserPage($campaignID, $memberID, $goal)
+    {
+        $params = array(
+            'filter'    => 'member_id=5018748,goal=500'
+        );
+        $fundraiser = $this->apiClient->request(
+            '/campaigns/'.$campaignID.'/fundraising-teams',
+            'POST',
+            $params
+        );
+        $result = json_decode($fundraiser, true);
+        // Pluck off relevant bits
+        $result = $result['data'];
+        //write_log( json_encode($result) );
+    }
+
+    /**
      * ADDED - Fetch campaign transactions from API
      *
      * @param integer $campaignId ID of organization to pull
@@ -220,7 +243,7 @@ class ClassyContent
      */
     public function campaignMember($memberID)
     {
-        $cacheKey = ClassyOrg::CACHE_KEY_PREFIX . '_CAMPAIGN_MEMB_' . $memberID;
+        $cacheKey = ClassyOrg::CACHE_KEY_PREFIX . '_CAMPAIGN_MEMBER_' . $memberID;
         $result = get_transient($cacheKey);
 
         if ($result === false)
@@ -230,7 +253,7 @@ class ClassyContent
                 'GET'
             );
             $result = json_decode($this_member, true);
-            write_log($result['id']);
+            //write_log($result['id']);
             // Pluck off relevant bits
             $result = $result['id'];
 
@@ -258,10 +281,14 @@ class ClassyContent
                 'aggregates' => 'true',
                 'sort' => 'total_raised:desc',
                 'per_page' => $count,
-                'filter'     => 'status=active'
+                'filter'    => 'status=active'
             );
 
-            $fundraisingPages = $this->apiClient->request('/campaigns/' . $campaignId . '/fundraising-teams', 'GET', $params);
+            $fundraisingPages = $this->apiClient->request(
+                '/campaigns/' . $campaignId . '/fundraising-teams'
+                , 'GET', 
+                $params
+            );
             $result = json_decode($fundraisingPages, true);
 
             $result = $result['data'];
