@@ -11,11 +11,11 @@ require_once(__DIR__ . '/widgets/ClassyOrg_CampaignFundraisingTeamLeadersWidget.
 
 /**
  * Plugin Name: Classy.org
- * Plugin URI: https://github.com/classy-org/classy-org-wp
+ * Plugin URI: https://github.com/headwayio/classy-org-wp
  * Description: Classy Wordpress plugin for API version 2
  * Version: 0.1.1
  * Author: Classy
- * Author URI: https://github.com/classy-org/classy-org-wp
+ * Author URI: https://github.com/headwayio/classy-org-wp
  * License: MIT
  */
 class ClassyOrg
